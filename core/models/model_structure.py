@@ -1,6 +1,6 @@
 import torch.nn as nn
 import torch
-from models.MoReT_3D.moret_3d import MoReT_3D
+from core.models.MoReT_3D.moret_3d import MoReT_3D
 
 def moret(in_channel):
     input_channel = in_channel

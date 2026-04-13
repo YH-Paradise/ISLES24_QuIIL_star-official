@@ -5,8 +5,8 @@ import numpy as np
 import os
 import datetime
 
-from models.model_structure import UNetWithConcat
-from utils.common.hyperparameters import optimizer_fc
+from core.models.model_structure import UNetWithConcat
+from utils.core.optimization import optimizer_fc
 from utils.common.isles_data_loader import brain_dataset_preparation, dataloading
 from utils.common.train_val_test_loop import train_model, val_cal
 

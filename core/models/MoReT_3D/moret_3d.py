@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from models.MoReT_3D.mobilevit_v3_block import MobileViTBlock
-from models.MoReT_3D.vit_block import SimpleViT
+from core.models.MoReT_3D.mobilevit_v3_block import MobileViTBlock
+from core.models.MoReT_3D.vit_block import SimpleViT
 
 
 def conv_1x1_gn(inp, oup):
