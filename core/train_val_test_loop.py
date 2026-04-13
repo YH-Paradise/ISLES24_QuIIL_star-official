@@ -1,13 +1,8 @@
-import random
-
 import numpy as np
 import torch
-import torch.nn.functional as F
 from tqdm import tqdm
 
-import matplotlib.pyplot as plt
-from utils.common.loss_functions import test_score
-from utils.isles_eval_util import compute_dice_f1_instance_difference, compute_absolute_volume_difference
+from core.isles_eval_util import compute_dice_f1_instance_difference, compute_absolute_volume_difference
 
 
 class AverageMeter(object):
@@ -100,7 +95,7 @@ def train_model(train_loader, model, loss_seg_fn, optimizer, device):
         concated_input, gt_label, sub_ctp = concated_input.to(device), gt_label.to(device), sub_ctp.to(device)
 
         pred_label = model(concated_input, sub_ctp)
-        loss = loss_seg_fn(torch.sigmoid(pred_label[0]), gt_label) # stunet
+        loss = loss_seg_fn(torch.sigmoid(pred_label[0]), gt_label)  # stunet
         # loss = loss_seg_fn(torch.sigmoid(pred_label), gt_label) #moret
 
         optimizer.zero_grad()
@@ -134,8 +129,8 @@ def val_cal(epoch, val_loader, model, loss_fn, threshold, device, with_synthe=Fa
 
             concated_input, gt_label, sub_ctp = concated_input.to(device), gt_label.to(device), sub_ctp.to(device)
             pred_label = model(concated_input, sub_ctp)
-            pred_label = torch.sigmoid(pred_label[0]) #stunet
-            # pred_label = torch.sigmoid(pred_label) # moret
+
+            pred_label = torch.sigmoid(pred_label)
 
             loss = loss_fn(pred_label, gt_label).mean().item()
 
@@ -148,7 +143,7 @@ def val_cal(epoch, val_loader, model, loss_fn, threshold, device, with_synthe=Fa
 
             f1, lcd, dice = compute_dice_f1_instance_difference(gt_label.data.cpu(), out_cut)
             abs_vol_diff = compute_absolute_volume_difference(gt_label.data.cpu(), out_cut,
-                                                                              voxel_volume.numpy())
+                                                              voxel_volume.numpy())
 
             val_f1.update(f1, iter == 0)
             val_lesion_cnt.update(lcd, iter == 0)
@@ -156,10 +151,9 @@ def val_cal(epoch, val_loader, model, loss_fn, threshold, device, with_synthe=Fa
             val_volume.update(abs_vol_diff, iter == 0)
 
             val_loss.update(loss, iter == 0)
-            # np.save(f"/data2/braindata/ISLES_synthe_seg_train/{patient_num[0]}.npy", out_cut)
             iter += 1
 
         print(f"[Epoch {epoch + 1}] Val Error: \n F1: {val_f1.avg}, Lesion_cnt : {val_lesion_cnt.avg}, \n DICE: {val_dice.avg} , Vol_diff : {val_volume.avg}, Avg_loss : {val_loss.avg:>9f} \n")
-            # print(f"[Epoch {epoch + 1}] Val Error: \n F1: {f1}, Lesion_cnt : {lcd}, \n DICE: {dice} , Vol_diff : {abs_vol_diff}, Avg_loss : {loss:>9f} \n")
+        # print(f"[Epoch {epoch + 1}] Val Error: \n F1: {f1}, Lesion_cnt : {lcd}, \n DICE: {dice} , Vol_diff : {abs_vol_diff}, Avg_loss : {loss:>9f} \n")
 
     return val_f1.avg, val_lesion_cnt.avg, val_dice.avg, val_volume.avg, val_loss.avg

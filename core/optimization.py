@@ -1,6 +1,6 @@
 from torch import nn
 import torch
-from utils.common.loss_functions import DiceBCEFocalLoss
+from core.losses import DiceBCEFocalLoss
 
 
 def optimizer_fc(model, init_lr, optim_name='adam', tmax_len=20):

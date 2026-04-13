@@ -32,9 +32,9 @@ class MV2Block(nn.Module):
             self.conv = nn.Sequential(
                 # dw
                 nn.Conv3d(hidden_dim, hidden_dim, (1, 3, 3), stride=(1, 1, 1), padding=(0,1,1), groups=hidden_dim, bias=False),
-                # nn.Conv3d(hidden_dim, hidden_dim, (3, 3, 3), stride=(1, 1, 1), padding=(1,1,1), groups=hidden_dim, bias=False),
                 nn.GroupNorm(1, hidden_dim),
                 nn.SiLU(),
+
                 # pw-linear
                 nn.Conv3d(hidden_dim, oup, 1, 1, 0, groups=hidden_dim, bias=False),
                 nn.GroupNorm(1, oup),
@@ -45,10 +45,12 @@ class MV2Block(nn.Module):
                 nn.Conv3d(inp, hidden_dim, 1, 1, 0, bias=False),
                 nn.GroupNorm(1, hidden_dim),
                 nn.SiLU(),
+
                 # dw
                 nn.Conv3d(hidden_dim, hidden_dim, kernel_size=kernel_size, stride=(1, stride, stride), padding=padding, groups=hidden_dim, bias=False),
                 nn.GroupNorm(1, hidden_dim),
                 nn.SiLU(),
+
                 # pw-linear
                 nn.Conv3d(hidden_dim, oup, 1, 1, 0, bias=False),
                 nn.GroupNorm(1, oup)
@@ -66,8 +68,7 @@ class ResidualBlock(nn.Module):
         super(ResidualBlock, self).__init__()
         self.gn = nn.GroupNorm(1, int(n_channels))
         self.conv1 = nn.Conv3d(n_channels, n_channels, kernel_size=(3, 1, 1), padding=(1, 0, 0), bias=False)
-        self.conv2 = nn.Conv3d(n_channels, n_channels, kernel_size=(3, 3, 3), groups=int(n_channels / 4),
-                               padding=(1, 1, 1), bias=False)
+        self.conv2 = nn.Conv3d(n_channels, n_channels, kernel_size=(3, 3, 3), groups=int(n_channels / 4), padding=(1, 1, 1), bias=False)
         self.conv3 = nn.Conv3d(n_channels, n_channels, kernel_size=(3, 1, 1), padding=(1, 0, 0), bias=False)
 
     def forward(self, x):
@@ -119,12 +120,14 @@ class MoReT_3D(nn.Module):
         self.convMtoN = conv_1x1_gn(channels[10], 128).to(device)
         self.vit = SimpleViT(dims[2], L[2], 128, (1, 6, 6), heads=4, dim_head=32).to(device)
         self.convNtoM = conv_1x1_gn(128, channels[10]).to(device)
+
         ''''''
         self.resblock1 = ResidualBlock(channels[8] + 256).to(device)  # 256 + 320
         self.resblock2 = ResidualBlock(channels[6] + 128).to(device)  # 128 + 256
         self.resblock3 = ResidualBlock(32 + channels[4]).to(device)  # 64 + 64
         self.resblock4 = ResidualBlock(16 + channels[2]).to(device)  # 52 + 52
         ''''''
+
         self.deconv1 = nn.ConvTranspose3d(channels[11], channels[10], kernel_size=(3, 3, 3), stride=(1, 3, 3), padding=(1, 2, 2)).to(device)  # 640 + 320
         self.deconv2 = nn.ConvTranspose3d(2 * (channels[8] + channels[10]), channels[8], kernel_size=(3, 3, 3), stride=(1, 2, 2), padding=(1, 1, 1), output_padding=(0, 1, 1)).to(device)  # 2*(256 + 320), 256
         self.deconv3 = nn.ConvTranspose3d(2 * (channels[6] + channels[8]), channels[5], kernel_size=(3, 3, 3), stride=(1, 2, 2), padding=(1, 1, 1), output_padding=(0, 1, 1)).to(device)  # 2 * (128 + 256), 64
@@ -176,114 +179,6 @@ class MoReT_3D(nn.Module):
 
         return reg_output
 
-
-# def mobilevit_xxs(input_channel):
-#     dims = [64, 80, 96]
-#     channels = [16, 16, 24, 24, 48, 48, 64, 64, 80, 80, 320]
-#     # channels = [16, 16, 24, 24, 40, 40, 56, 56, 112, 112, 1280, 1280]
-#     # channels = [16, 24, 40, 112, 1280]
-#     # channels = [16, 64, 128, 512, 1024]
-#     return MoReT_3D((224, 224), dims, channels, input_channel, num_classes=7, expansion=2)
-#
-#
-# def mobilevit_xs():
-#     dims = [96, 120, 144]
-#     channels = [16, 32, 48, 48, 64, 64, 80, 80, 96, 96, 384]
-#     return MoReT_3D((224, 224), dims, channels, input_channel, num_classes=7)
-#
-#
-# def mobilevit_s():
-#     dims = [144, 192, 240]
-#     channels = [16, 32, 64, 64, 96, 96, 128, 128, 160, 160, 640]
-#     return MoReT_3D((224, 224), dims, channels, input_channel, num_classes=7)
-
-
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
-
-if __name__ == '__main__':
-    input_channel = 40
-    img = torch.rand(1, input_channel, 20, 224, 224).to(torch.device("cuda:4"))  # (batch_size, time(==channel), slice, height, width)
-
-    network_architecture = {
-        "parameters": {
-            "image_size": (20, 224, 224),
-            "dims": [64, 80, 96],
-            "channels": [52, 52, 52, 64, 64, 64, 128, 128, 256, 256, 512, 512],
-            "input_channel": input_channel,
-            "kernel_size": 3,
-            "patch_size": (2, 2, 2),
-            "num_classes": 7,
-            "expansion": 2,
-            "device": torch.device("cuda:4"),
-        }
-    }
-    params = network_architecture['parameters']
-    network = MoReT_3D(**params)
-    out = network(img)
-    print(out.shape)
-
-    breakpoint()
-
-    starter, ender = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
-    repetitions = 10
-
-    import numpy as np
-    timings = np.zeros((repetitions, 1))
-
-    _ = network(img)
-
-    # MEASURE PERFORMANCE
-    total_time = 0
-    with torch.no_grad():
-        for rep in range(repetitions):
-            starter.record()
-            _ = network(img)
-            ender.record()
-            # WAIT FOR GPU SYNC
-            torch.cuda.synchronize()
-            curr_time = starter.elapsed_time(ender)
-            timings[rep] = curr_time
-            total_time += curr_time
-
-    print(total_time/repetitions/1000)
-    # out = network(img)
-    # print(out.shape)
-    # summary(network, input_size=(batch_size, 40, 20, 224, 224), device="cpu")
-    # # network = Mobilevit_nearest_neighbor_upsampling(**params)
-    #
-    # from thop import profile
-    #
-    # # output = network(img)
-    # flops, params, ret_layer_info = profile(network.to(torch.device("cuda:4")), inputs=(img.to(torch.device("cuda:4")),), ret_layer_info=True)
-    # print('params', params)
-    # print('FLOPs:', flops)
-    # #
-    # # print("parameters:", count_parameters(network)) # 1567697
-    # #
-    #
-    # totalparams = 0
-    # for name, param in network.named_parameters():
-    #     if param.requires_grad:
-    #         # print(f"Parameter name: {name}, {param.numel()}")
-    #         totalparams += param.numel()
-    # print(f">> the total parameters: {totalparams}")
-    #
-    # buffer_size = 0
-    # for buffer in network.buffers():
-    #     buffer_size += buffer.nelement() * buffer.element_size()
-    #
-    # size_all_mb = (totalparams + buffer_size) / 1024 ** 2
-    # print('>> model size: {:.3f}MB\n'.format(size_all_mb))
-    #
-    # import pytorch_model_summary
-    # print(pytorch_model_summary.summary(network, torch.zeros(1, 40, 20, 224, 224), show_input=True))
-    #
-    # # from torchinfo import summary
-    # # batch_size = 4
-
-    # from torchsummary import summary
-    # summary(network, (40, 20, 224, 224), batch_size=4, device="cpu")
-
-    # out = network(img)

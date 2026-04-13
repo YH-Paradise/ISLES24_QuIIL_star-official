@@ -1,17 +1,14 @@
 import numpy as np
 import pandas as pd
 import torch
-import torch.nn.functional as F
 import torchvision
-import torchvision.transforms as transforms
 from skimage.transform import resize
-from scipy.ndimage import rotate
 from torch.utils.data import Dataset, DataLoader
 import nibabel as nib
 import SimpleITK as sitk
 import random
 import torchio as tio
-from utils.common.nii_to_npy import simpleitk_loader
+from data.nii_to_npy import simpleitk_loader
 import os
 import glob
 
@@ -37,6 +34,18 @@ def min_max_norm(input_modality):
 
 
 def brain_dataset_preparation(path):
+    """
+    Preprocesses brain imaging data from a given directory.
+
+    Args:
+        path (str): The path to the directory containing the brain imaging NIfTI files.
+                    This directory is expected to contain files such as
+                    '*_lesion-msk.nii.gz', '*_adc.nii.gz', '*_dwi.nii.gz', etc.
+                    The function will load these files, resize them, and save
+                    them as NumPy arrays in a 'preprocessed_npy' subdirectory
+                    within the specified path.
+    """
+
     gt = simpleitk_loader(glob.glob(f"{path}/*_lesion-msk.nii.gz")[0])
     adc = simpleitk_loader(glob.glob(f"{path}/*_adc.nii.gz")[0])
     dwi = simpleitk_loader(glob.glob(f"{path}/*_dwi.nii.gz")[0])
@@ -144,10 +153,3 @@ def dataloading(df, shuffle, batch_size=1, modality='', is_augmented=False):
     dataset = BrainDataset(df=df, modality=modality, is_augmented=is_augmented)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
     return dataloader
-
-
-
-if __name__ == '__main__':
-    root_dir = "/data1/braindata/file_dir_csvs"
-    sample = brain_dataset_preparation(root_dir + "/MR_trainset_split(0709).csv")
-    train_dataloader = dataloading(sample, shuffle=True, batch_size=1)

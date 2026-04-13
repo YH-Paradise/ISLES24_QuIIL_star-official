@@ -7,8 +7,8 @@ import datetime
 
 from core.models.model_structure import UNetWithConcat
 from utils.core.optimization import optimizer_fc
-from utils.common.isles_data_loader import brain_dataset_preparation, dataloading
-from utils.common.train_val_test_loop import train_model, val_cal
+from data.isles_data_loader import brain_dataset_preparation, dataloading
+from core.train_val_test_loop import train_model, val_cal
 
 seed = 42
 random.seed(seed)
@@ -86,24 +86,35 @@ def pretrained_weights_check(new_model, pretrained_weights):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="ISLES24 model training script")
-    parser.add_argument('--cuda_num', type=int, default=0)
-    parser.add_argument('--init_lr', type=float, default=0.001)
-    parser.add_argument('--epochs', type=int, default=300)
-    parser.add_argument('--model', type=str, default='transformer')
-    parser.add_argument('--batch_size', type=int, default=1)
-    parser.add_argument('--in_channel', type=int, default=4)
-    parser.add_argument('--out_channel', type=int, default=1)
-    parser.add_argument('--modality', type=str, default='tmax')
+    parser = argparse.ArgumentParser(description="MICCAI 2026 AEGIS ONLY")
+    parser.add_argument("--config", type=str, default="./config/ISLES24_QuIIL_STAR.yaml")
+
+    """ WANDB SETTINGS """
+    parser.add_argument("--wandb", action="store_true", help="Run with Weights & Biases logging")
+    parser.add_argument("--wandb_key", type=str, default="wandb private key")
+    parser.add_argument("--wandb_project_entity", type=str, default="wandb private ID")
+    parser.add_argument("--wandb_project_name", type=str, default="DWI segmentation benchmark")
+
+    """ DATASET PREPARATION"""
+    parser.add_argument("--dataset_csv_root_dir", type=str, default="./dataset")
+
+    """ DEFAULT EXPERIMENT SETTINGS """
+    parser.add_argument("--cuda_num", type=int, default=4)
+    parser.add_argument("--init_lr", type=float, default=0.001)
+    parser.add_argument("--epochs", type=int, default=150)
+    parser.add_argument("--input_shape", nargs="+", type=int, default=[128, 128, 128])
+    parser.add_argument("--lookahead", type=str, default="true", choices=["true", "false"])
+
+    """ MODEL SETTINGS """
+    parser.add_argument("--model_name", type=str, default="swin")
+    parser.add_argument("--is_AEGIS", type=str, default="true")
+
+    """ INPUT SETTINGS """
+    parser.add_argument("--dataset", type=str, default="mamamia")
+    parser.add_argument("--batch_size", type=int, default=2)
+    parser.add_argument("--in_channel", type=int, default=1)
+    parser.add_argument("--out_channel", type=int, default=1)
 
     args = parser.parse_args()
 
-    isles24_loop(args)
-
-# python main.py --cuda_num 0 --init_lr 0.0001 --epochs 100 --model 'cnn' --batch_size 1 --in_channel 3 --modality 'tmaxoff'
-# python main.py --cuda_num 1 --init_lr 0.0001 --epochs 100 --model 'cnn' --batch_size 1 --in_channel 4 --modality 'tmax'
-
-# python main.py --cuda_num 2 --init_lr 0.0001 --epochs 100 --model 'transformer' --batch_size 1 --in_channel 3 --modality 'tmaxoff'
-# python main.py --cuda_num 3 --init_lr 0.0001 --epochs 100 --model 'transformer' --batch_size 1 --in_channel 4 --modality 'tmax'
-
-# python main.py --cuda_num 4 --init_lr 0.0001 --epochs 100 --model 'cnn' --batch_size 1 --in_channel 4 --modality 'tmax'
+    DWI_segmentation_benchmark_train_n_validation(args)

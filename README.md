@@ -65,10 +65,12 @@ python scripts/preprocess.py --data_dir ./data --out_dir ./data_preprocessed
 ```
 
 ## 🚀 Training
+![Overall_architecture](images/Moret_architecture.png)
+*(Figure Description: Overall architecture of 3D-MoReT used in this project. Architecture adapted from [Jung et al. (2024)](https://doi.org/10.1007/s11548-024-03229-5).)*
 
 To train the model on the preprocessed dataset, configure your hyperparameters in `configs/base_config.yaml` and run:
 ```bash
-python train.py --config configs/base_config.yaml --batch_size 2 --epochs 200
+python main.py --config configs/base_config.yaml --batch_size 2 --epochs 200
 ```
 * Training logs and checkpoints will be automatically saved in the `checkpoints/` directory.
 
